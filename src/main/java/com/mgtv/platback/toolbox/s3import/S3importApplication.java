@@ -19,7 +19,10 @@ public class S3importApplication {
                 SpringApplication.run(S3importApplication.class, args);
 
 
+        // 解析命令行
         CmdOptionHandler cmdRunner = context.getBean(CmdOptionHandler.class);
+
+        // 根据命令行执行
         cmdRunner.handleArgumentOption();
 
         logger.info("task completed.");

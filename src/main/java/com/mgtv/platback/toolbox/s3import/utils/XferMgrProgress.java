@@ -74,8 +74,8 @@ public class XferMgrProgress {
             // Note: so_far and total aren't used, they're just for
             // documentation purposes.
             TransferProgress progress = xfer.getProgress();
-            long so_far = progress.getBytesTransferred();
-            long total = progress.getTotalBytesToTransfer();
+//            long so_far = progress.getBytesTransferred();
+//            long total = progress.getTotalBytesToTransfer();
             double pct = progress.getPercentTransferred();
             eraseProgressBar();
             printProgressBar(pct);
@@ -128,7 +128,7 @@ public class XferMgrProgress {
         // if bar_size changes, then change erase_bar (in eraseProgressBar) to
         // match.
         final int bar_size = 40;
-        final String empty_bar = "                                        ";
+        final String empty_bar =  "                                        ";
         final String filled_bar = "########################################";
         int amt_full = (int) (bar_size * (pct / 100.0));
         System.out.format("  [%s%s]", filled_bar.substring(0, amt_full),

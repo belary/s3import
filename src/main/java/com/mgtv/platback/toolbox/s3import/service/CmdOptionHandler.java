@@ -10,6 +10,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.io.File;
 import java.util.List;
 
 @Service
@@ -47,17 +48,30 @@ public class CmdOptionHandler {
             return;
         }
 
-        handleDownloadS3(); 
+        handleS3LogByDate();
     }
 
-    protected void handleDownloadS3() {
-        String strLogDate, strS3KeyPrefix,  strLocalPath, strOutputPath;
+    protected void handleS3LogByDate() throws Exception {
+
+        String strLogDate, strS3KeyPrefix, strLocalPath, strOutputPath;
+
         strLogDate = getFirstElement(arguments.getOptionValues(CmdlineConstants.LOG_DATE));
-        strS3KeyPrefix = buildS3Prefix(strLogDate) + "/" + "20";
+        strS3KeyPrefix = buildS3Prefix(strLogDate);
         strLocalPath = getFirstElement(arguments.getOptionValues(CmdlineConstants.LOCAL_PATH));
-        s3DownloadMgr.downloadDir(bucket, strS3KeyPrefix, strLocalPath, false);
+        strOutputPath = getFirstElement(arguments.getOptionValues(CmdlineConstants.OUTPUT_PATH)) ;
 
+        s3DownloadMgr.cleanupDir(strOutputPath, strLocalPath);
+
+        // download files
+         s3DownloadMgr.downloadDir(bucket, strS3KeyPrefix, strLocalPath, false);
+
+        // download postprocess
+
+        int cnt = s3DownloadMgr.unzipDir(new File(strLocalPath), strOutputPath);
+
+        log.info("解压了{}个压缩文件", cnt);
     }
+
 
     private String buildS3Prefix(String logDate) {
         return  logPrefix + "/"  + logDate;
@@ -84,7 +98,7 @@ public class CmdOptionHandler {
                 "    --local_path  - The local path to use to download the object(s)\n" +
                 "                     cleared each time when begin to download.\n\n" +
 
-                "    --output_path - The local path to store the unzipped or merged log file\n\n" +
+                "    --output_path - The local path to store the unzipped or merged log file,should end with \\(windows) or / \n\n" +
                
                 "Examples:\n" +
                 "    --log_date=20210625 --local_path=\\mnt\\data\\download --output_path=\\mnt\\data\\logs";

@@ -11,6 +11,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.zip.GZIPInputStream;
 
 
 @Service
@@ -18,6 +23,74 @@ public class S3DownloadMgr {
 
     private static final Logger log = LoggerFactory.getLogger(S3DownloadMgr.class);
 
+    private int deletedFilesCnt;
+
+    private int unzipCnt;
+
+
+    /**
+     *  remove local dir and output dir
+     */
+    public void cleanupDir(String outputDir, String downloadDir) {
+
+        int delUnzipCnt = deleteDir(new File(outputDir));
+        log.info("清理解压文件共"+delUnzipCnt+"个");
+        deletedFilesCnt = 0;
+        int delDownloadCnt = deleteDir(new File(downloadDir));
+        log.info("清理下载文件共"+delDownloadCnt+"个");
+    }
+
+    /**
+     * delete file recursively
+     */
+    public int deleteDir(File root) {
+        File[] files = root.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (f.isDirectory()) { // 判断是否为文件夹
+                    deleteDir(f);
+                } else {
+                    if (f.exists()) { // 判断是否存在
+                        deleteDir(f);
+                        try {
+                            if (f.delete()) {
+                                deletedFilesCnt++;
+                            }
+                        } catch (Exception e) {
+                            log.error("删除文件失败", e);
+                        }
+                    }
+                }
+            }
+        }
+        return deletedFilesCnt;
+    }
+
+
+    /**
+     * unzip to specify folder
+     */
+    public int unzipDir(File zipFile, String outputDir ) throws Exception {
+
+        File outputFile = new File(outputDir);
+        if ( !outputFile.exists() && !outputFile.mkdirs() ) {
+            throw new RuntimeException("Couldn't create output directories for " + outputFile.getAbsolutePath());
+        }
+
+        if (zipFile.isDirectory()) {
+            for (File child : zipFile.listFiles()) {
+                unzipDir(child, outputDir);
+            }
+        } else if (zipFile.getAbsolutePath().endsWith(".gz")) {
+            unzipCnt ++;
+            try (GZIPInputStream gis = new GZIPInputStream(
+                    new FileInputStream(zipFile)
+            )) {
+                Files.copy(gis, Paths.get(outputDir + zipFile.getName().replace(".gz", "")), StandardCopyOption.REPLACE_EXISTING);
+            }
+        }
+        return unzipCnt;
+    }
 
     /**
      * download a folder
