@@ -10,7 +10,4 @@ public class CmdlineConstants {
 
     public static final String OUTPUT_PATH= "output_path";
 
-    public static final String MERGE= "merge";
-
-
 }

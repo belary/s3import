@@ -63,13 +63,14 @@ public class CmdOptionHandler {
         s3DownloadMgr.cleanupDir(strOutputPath, strLocalPath);
 
         // download files
-         s3DownloadMgr.downloadDir(bucket, strS3KeyPrefix, strLocalPath, false);
+        s3DownloadMgr.downloadDir(bucket, strS3KeyPrefix, strLocalPath, false);
+        log.info("download complete.");
 
         // download postprocess
 
         int cnt = s3DownloadMgr.unzipDir(new File(strLocalPath), strOutputPath);
 
-        log.info("解压了{}个压缩文件", cnt);
+        log.info("unzipped completed {} files", cnt);
     }
 
 
