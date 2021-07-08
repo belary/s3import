@@ -15,6 +15,7 @@ import java.io.FileInputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 
@@ -95,9 +96,14 @@ public class S3DownloadMgr {
     /**
      * download a folder
      */
-    public void downloadDir(String bucket_name, String key_prefix,
+    public void downloadDir(String bucket_name, List<String> key_prefix,
                             String dir_path, boolean pause) {
-       log.info("downloading to directory: " + dir_path +
+      key_prefix.forEach(s3Prefix -> transferDir(bucket_name, s3Prefix, dir_path, pause));
+    }
+
+    public void transferDir(String bucket_name, String key_prefix,
+                            String dir_path, boolean pause) {
+        log.info("downloading to directory: " + dir_path +
                 (pause ? " (pause)" : ""));
 
         TransferManager xfer_mgr = TransferManagerBuilder.standard().build();

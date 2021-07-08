@@ -11,11 +11,12 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CmdOptionHandler {
-
 
     private static final Logger log =
             LoggerFactory.getLogger(CmdOptionHandler.class);
@@ -53,17 +54,23 @@ public class CmdOptionHandler {
 
     protected void handleS3LogByDate() throws Exception {
 
-        String strLogDate, strS3KeyPrefix, strLocalPath, strOutputPath;
+        String strLogDate, strLocalPath, strOutputPath;
+        List<String> lstS3KeyPrefix;
+        List<String> lstLogHours = arguments.getOptionValues(CmdlineConstants.LOG_HOURS);
 
         strLogDate = getFirstElement(arguments.getOptionValues(CmdlineConstants.LOG_DATE));
-        strS3KeyPrefix = buildS3Prefix(strLogDate);
+        lstS3KeyPrefix = buildS3Prefix(strLogDate, lstLogHours);
+        lstS3KeyPrefix.forEach(prefix -> log.info("s3 key is {}", prefix));
         strLocalPath = getFirstElement(arguments.getOptionValues(CmdlineConstants.LOCAL_PATH));
         strOutputPath = getFirstElement(arguments.getOptionValues(CmdlineConstants.OUTPUT_PATH)) ;
+
+
 
         s3DownloadMgr.cleanupDir(strOutputPath, strLocalPath);
 
         // download files
-        s3DownloadMgr.downloadDir(bucket, strS3KeyPrefix, strLocalPath, false);
+        s3DownloadMgr.downloadDir(bucket,  lstS3KeyPrefix, strLocalPath, false);
+
         log.info("download complete.");
 
         // download postprocess
@@ -74,8 +81,18 @@ public class CmdOptionHandler {
     }
 
 
-    private String buildS3Prefix(String logDate) {
-        return  logPrefix + "/"  + logDate;
+    private List<String> buildS3Prefix(String logDate, List<String> logHours) {
+        List<String> lstPrefix = new ArrayList<>();
+        if (logHours != null && logHours.size() > 0) {
+            lstPrefix =
+                    logHours.stream()
+                            .map(hour -> logPrefix + "/" + logDate + "/" + hour)
+                            .collect(Collectors.toList());
+        } else {
+            lstPrefix.add(logPrefix + "/"  + logDate);
+        }
+
+        return lstPrefix;
     }
     
     private <T> T getFirstElement(List<T> lstElements) {
@@ -94,7 +111,9 @@ public class CmdOptionHandler {
                 "    --log_date    - Specify the log date to retrieve.\n" +
                 "                    Copies the contents of the directory recursively.\n\n" +
 
-                "    --merge       - Attempt to merge the logs into one piece default value is true\n\n" +
+                "    --log_hours   - Specify the hour to download multiple hours supported\n" +
+                "                    no provided with this parameter will download all the " +
+                "                    data in the log_date \n" +
 
                 "    --local_path  - The local path to use to download the object(s)\n" +
                 "                     cleared each time when begin to download.\n\n" +
@@ -105,7 +124,7 @@ public class CmdOptionHandler {
                 "    --log_date=20210625 --local_path=\\mnt\\data\\download --output_path=\\mnt\\data\\logs";
 
         System.out.println(USAGE);
-        System.out.println("    --logDate=${logDate} --merge=${merge} --local_path=${downloadDir} --outputDir=${outputDir}");
+        System.out.println("    --logDate=${logDate} --merge=${merge} --local_path=${downloadDir} --outputDir=${outputDir} --log_date=2021/07/06 --log_hours=20 --log_hours=21 ");
     }
 
 }

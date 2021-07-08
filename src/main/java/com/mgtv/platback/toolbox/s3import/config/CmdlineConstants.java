@@ -8,6 +8,8 @@ public class CmdlineConstants {
 
     public static final String LOG_DATE = "log_date";
 
+    public static final String LOG_HOURS = "log_hours";
+
     public static final String OUTPUT_PATH= "output_path";
 
 }
